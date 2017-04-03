@@ -115,31 +115,29 @@ public class SeamCarving {
 		int w = energyMat[1].length;
 		for (int i = 1; i < h; i++) {
 			for (int j = 0; j < w; j++) {
-				if (j == 0) {
-					energyMat[i][j] = energyMat[i][j] + Math.min(energyMat[i - 1][j], energyMat[i - 1][j + 1]);
-				} else if (j == h - 1) {
-					energyMat[i][j] = energyMat[i][j] + Math.min(energyMat[i - 1][j], energyMat[i - 1][j - 1]);
-				} else {
-					energyMat[i][j] = energyMat[i][j]
-							+ Math.min(energyMat[i - 1][j - 1], Math.min(energyMat[i - 1][j], energyMat[i - 1][j + 1]));
-				}
+
+				double leftNeighbor = (j == 0) ? Double.POSITIVE_INFINITY : energyMat[i - 1][j - 1];
+				double rightNeighbor = (j == w - 1) ? Double.POSITIVE_INFINITY : energyMat[i - 1][j + 1];
+
+				energyMat[i][j] = energyMat[i][j]
+						+ Math.min(leftNeighbor, Math.min(energyMat[i - 1][j], rightNeighbor));
 			}
 		}
 		return energyMat;
+
 	}
 
 	public static List<Pixel> pickPixelsSeam(double[][] dynamicMat) {
 		int h = dynamicMat.length;
 		int w = dynamicMat[1].length;
 		int minIndex = -1;
-		double min = Double.POSITIVE_INFINITY; // TODO check if num is less
-												// than POS_INFINITY
+		double minLastRow = Double.POSITIVE_INFINITY; 
 		List<Pixel> pixelsList = new ArrayList<Pixel>();
 
 		// finding the minimum in the last line
 		for (int j = 0; j < w; j++) {
-			if (dynamicMat[h - 1][j] < min) {
-				min = dynamicMat[h - 1][j];
+			if (dynamicMat[h - 1][j] < minLastRow) {
+				minLastRow = dynamicMat[h - 1][j];
 				minIndex = j;
 			}
 		}
@@ -149,15 +147,14 @@ public class SeamCarving {
 			double leftNeighbor = (curr == 0) ? Double.POSITIVE_INFINITY : dynamicMat[i - 1][curr - 1];
 			double rightNeighbor = (curr == w - 1) ? Double.POSITIVE_INFINITY : dynamicMat[i - 1][curr + 1];
 
-			double nextMinPixel = Math.min(leftNeighbor,
-					Math.min(dynamicMat[i - 1][curr], rightNeighbor));
-			
-			if (nextMinPixel == dynamicMat[i - 1][curr - 1]) 
-				curr --;
-			else if (nextMinPixel == dynamicMat[i - 1][curr + 1]) 
-				curr ++;
-			
-			pixelsList.add(new Pixel(i - 1, curr));	
+			double nextMinPixel = Math.min(leftNeighbor, Math.min(dynamicMat[i - 1][curr], rightNeighbor));
+
+			if (nextMinPixel == dynamicMat[i - 1][curr - 1])
+				curr--;
+			else if (nextMinPixel == dynamicMat[i - 1][curr + 1])
+				curr++;
+
+			pixelsList.add(new Pixel(i - 1, curr));
 		}
 		return pixelsList;
 

@@ -11,7 +11,7 @@ public class Pixel {
 		this.x = x;
 		this.y = y;
 	}
-	
+
 	public Pixel(Pixel p) {
 		this.x = p.x;
 		this.y = p.y;
@@ -60,7 +60,7 @@ public class Pixel {
 
 	{
 		List<Pixel> neighborsList = new ArrayList<Pixel>();
-		
+
 		neighborsList.add(new Pixel(this.x - 1, this.y - 1));
 		neighborsList.add(new Pixel(this.x - 1, this.y));
 		neighborsList.add(new Pixel(this.x - 1, this.y + 1));
@@ -69,18 +69,15 @@ public class Pixel {
 		neighborsList.add(new Pixel(this.x + 1, this.y - 1));
 		neighborsList.add(new Pixel(this.x + 1, this.y));
 		neighborsList.add(new Pixel(this.x + 1, this.y + 1));
-		
+
 		neighborsList = removeUnrealPixels(neighborsList, w, h);
 		return neighborsList;
 	}
-	
-	public List<Pixel> getEnthropyMembers(int w, int h)
-	{
+
+	public List<Pixel> getEnthropyMembers(int w, int h) {
 		List<Pixel> neighborsList = new ArrayList<Pixel>();
-		for(int i = this.x - 4; i <= this.x + 4; i++)
-		{
-			for(int j =  this.y - 4; j <= this.y + 4; j++)
-			{
+		for (int i = this.x - 4; i <= this.x + 4; i++) {
+			for (int j = this.y - 4; j <= this.y + 4; j++) {
 				Pixel p = new Pixel(i, j);
 				neighborsList.add(p);
 			}
