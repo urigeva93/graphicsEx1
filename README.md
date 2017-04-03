@@ -1,1 +1,1 @@
-# graphicsEx1
+Seam Carving implementation - Ex1 Graphics
