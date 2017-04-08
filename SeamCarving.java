@@ -35,7 +35,7 @@ public class SeamCarving {
                             + Math.abs(colorNeighbor.getBlue() - selfColor.getBlue())
                             + Math.abs(colorNeighbor.getGreen() - selfColor.getGreen())) / 3;
                 }
-                energyMat[i][j] = sumNeighbors / numOfNeighbors; //normalizing
+                energyMat[i][j] = sumNeighbors / numOfNeighbors; // normalizing
 
             }
         }
@@ -124,7 +124,6 @@ public class SeamCarving {
             }
         }
         return energyMat;
-
     }
 
     public static List<Pixel> pickNextSeam(double[][] dynamicMat) {
@@ -132,7 +131,7 @@ public class SeamCarving {
         int w = dynamicMat[1].length;
         int minIndex = -1;
         double minLastRow = Double.POSITIVE_INFINITY;
-        List<Pixel> pixelsList = new ArrayList<>();
+        List<Pixel> pixelSeamList = new ArrayList<>();
 
         // find the minimum in the last line
         for (int j = 0; j < w; j++) {
@@ -141,7 +140,7 @@ public class SeamCarving {
                 minIndex = j;
             }
         }
-        pixelsList.add(new Pixel(h - 1, minIndex));
+        pixelSeamList.add(new Pixel(h - 1, minIndex));
         int curr = minIndex;
         for (int i = h - 1; i > 0; i--) {
             double leftNeighbor = (curr == 0) ? Double.POSITIVE_INFINITY : dynamicMat[i - 1][curr - 1];
@@ -154,9 +153,9 @@ public class SeamCarving {
             else if (nextMinPixel == dynamicMat[i - 1][curr + 1])
                 curr++;
 
-            pixelsList.add(new Pixel(i - 1, curr));
+            pixelSeamList.add(new Pixel(i - 1, curr));
         }
-        return pixelsList;
+        return pixelSeamList;
 
     }
 
@@ -167,7 +166,7 @@ public class SeamCarving {
         double[][] energyMat = computeEnergy(img);
 
         if (type == EnergyTypes.REGULAR)
-            return computeEnergy(img);
+            return energyMat;
         else {
             if (type == EnergyTypes.ENTROPY) {
                 double[][] entropyMat = computeEntropy(img);
@@ -182,12 +181,11 @@ public class SeamCarving {
         }
         return combinedMat;
 
-
     }
 
     public static void saveImage(String path, BufferedImage inputImg) {
         try {
-            ImageIO.write(inputImg, "png", new File(path));
+            ImageIO.write(inputImg, "jpg", new File(path));
         } catch (IOException e) {
             System.out.println("Error in saving file: " + e.getMessage());
         }
@@ -201,13 +199,68 @@ public class SeamCarving {
 
     }
 
-    public enum EnergyTypes {
-        REGULAR, FORWARD, ENTROPY
+    public static BufferedImage removeSeamFromImg(BufferedImage oldImg, List<Pixel> seamList) {
+        int h = oldImg.getHeight();
+        int w = oldImg.getWidth();
+        Pixel pixel;
+        BufferedImage newImg = new BufferedImage(w - 1, h, oldImg.getType());
+        for (int i = 0; i < h; i++) {
+            pixel = seamList.remove(seamList.size() - 1);
+            for (int j = 0; j < pixel.getY(); j++) { // first half of row -
+                // until removed pixel
+                newImg.setRGB(j, i, oldImg.getRGB(j, i));
+            }
+            for (int k = pixel.getY(); k < w - 1; k++) { // second half of row -
+                // from removed
+                // pixel
+                newImg.setRGB(k, i, oldImg.getRGB(k + 1, i));
+            }
+        }
+        return newImg;
     }
 
-    // TODO removeSeamFromImage
-    // TODO addSeamFromImage
-    // TODO forward
+    public static BufferedImage addSeamToImg(BufferedImage oldImg, List<Pixel> seamList) {
+        int h = oldImg.getHeight();
+        int w = oldImg.getWidth();
+        Pixel pixel;
+        BufferedImage newImg = new BufferedImage(w + 1, h, oldImg.getType());
+        for (int i = 0; i < h; i++) {
+            pixel = seamList.remove(seamList.size() - 1);
+            for (int j = 0; j <= pixel.getY(); j++) { // first half of row -
+                // until removed pixel
+                newImg.setRGB(j, i, oldImg.getRGB(j, i));
+            }
+            newImg.setRGB(pixel.getY() + 1, i, oldImg.getRGB(pixel.getY(), i));
 
+            for (int k = pixel.getY() + 1; k < w; k++) { // second half of row -
+                // from removed
+                // pixel
+                newImg.setRGB(k + 1, i, oldImg.getRGB(k, i));
+            }
+        }
+        return newImg;
+    }
+
+    public static void main(String[] args) throws IOException {
+        BufferedImage inputImg = ImageIO.read(new File(args[0]));
+        int desiredRows = Integer.parseInt(args[1]);
+        int desiredCols = Integer.parseInt(args[2]);
+        int energyTypeInt = Integer.parseInt(args[3]);
+        String outputImagePath = args[4];
+        EnergyTypes energyType = EnergyTypes.values()[energyTypeInt];
+        double[][] energyMat = computeEnergyFromImage(inputImg, energyType);
+        double[][] dynamicMat = dynamicEnergyMat(energyMat);
+        List<Pixel> seamList = pickNextSeam(dynamicMat);
+        BufferedImage outputImg = removeSeamFromImg(inputImg, seamList);
+        saveImage(outputImagePath, outputImg);
+    }
+
+    public enum EnergyTypes {
+        REGULAR, ENTROPY, FORWARD
+    }
+
+    // TODO implement main as asked for using transpose vehu
+    // TODO blend interpolation with neighbors
+    // TODO forward
 
 }

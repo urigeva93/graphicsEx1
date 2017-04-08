@@ -1,88 +1,87 @@
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class Pixel {
-	int x;
-	int y;
+    int x;
+    int y;
 
-	public Pixel(int x, int y) {
-		this.x = x;
-		this.y = y;
-	}
+    public Pixel(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
 
-	public Pixel(Pixel p) {
-		this.x = p.x;
-		this.y = p.y;
-	}
+    public Pixel(Pixel p) {
+        this.x = p.x;
+        this.y = p.y;
+    }
 
-	public int getX() {
-		return x;
-	}
+    private static List<Pixel> removeUnrealPixels(List<Pixel> pixelsList, int w, int h) {
+        Iterator<Pixel> it = pixelsList.iterator();
 
-	public void setX(int x) {
-		this.x = x;
-	}
+        List<Pixel> pixelsToRemove = new ArrayList<Pixel>();
 
-	public int getY() {
-		return y;
-	}
+        // First collect all nodes to remove
+        while (it.hasNext()) {
+            Pixel p = it.next();
+            if ((p.x < 0) || (p.y < 0) || (p.x > h - 1) || (p.y > w - 1)) {
+                pixelsToRemove.add(p);
+            }
+        }
 
-	public void setY(int y) {
-		this.y = y;
-	}
+        // Then Remove it from neighborsList
+        it = pixelsToRemove.iterator();
+        while (it.hasNext()) {
+            Pixel p = it.next();
+            pixelsList.remove(p);
+        }
+        return pixelsList;
 
-	private static List<Pixel> removeUnrealPixels(List<Pixel> pixelsList, int w, int h) {
-		Iterator<Pixel> it = pixelsList.iterator();
+    }
 
-		List<Pixel> pixelsToRemove = new ArrayList<Pixel>();
+    public int getX() {
+        return x;
+    }
 
-		// First collect all nodes to remove
-		while (it.hasNext()) {
-			Pixel p = it.next();
-			if ((p.x < 0) || (p.y < 0) || (p.x > h - 1) || (p.y > w - 1)) {
-				pixelsToRemove.add(p);
-			}
-		}
+    public void setX(int x) {
+        this.x = x;
+    }
 
-		// Then Remove it from neighborsList
-		it = pixelsToRemove.iterator();
-		while (it.hasNext()) {
-			Pixel p = it.next();
-			pixelsList.remove(p);
-		}
-		return pixelsList;
+    public int getY() {
+        return y;
+    }
 
-	}
+    public void setY(int y) {
+        this.y = y;
+    }
 
-	public List<Pixel> getNeighbors(int w, int h)
+    public List<Pixel> getNeighbors(int w, int h)
 
-	{
-		List<Pixel> neighborsList = new ArrayList<Pixel>();
+    {
+        List<Pixel> neighborsList = new ArrayList<Pixel>();
 
-		neighborsList.add(new Pixel(this.x - 1, this.y - 1));
-		neighborsList.add(new Pixel(this.x - 1, this.y));
-		neighborsList.add(new Pixel(this.x - 1, this.y + 1));
-		neighborsList.add(new Pixel(this.x, this.y - 1));
-		neighborsList.add(new Pixel(this.x, this.y + 1));
-		neighborsList.add(new Pixel(this.x + 1, this.y - 1));
-		neighborsList.add(new Pixel(this.x + 1, this.y));
-		neighborsList.add(new Pixel(this.x + 1, this.y + 1));
+        neighborsList.add(new Pixel(this.x - 1, this.y - 1));
+        neighborsList.add(new Pixel(this.x - 1, this.y));
+        neighborsList.add(new Pixel(this.x - 1, this.y + 1));
+        neighborsList.add(new Pixel(this.x, this.y - 1));
+        neighborsList.add(new Pixel(this.x, this.y + 1));
+        neighborsList.add(new Pixel(this.x + 1, this.y - 1));
+        neighborsList.add(new Pixel(this.x + 1, this.y));
+        neighborsList.add(new Pixel(this.x + 1, this.y + 1));
 
-		neighborsList = removeUnrealPixels(neighborsList, w, h);
-		return neighborsList;
-	}
+        neighborsList = removeUnrealPixels(neighborsList, w, h);
+        return neighborsList;
+    }
 
-	public List<Pixel> getEnthropyMembers(int w, int h) {
-		List<Pixel> neighborsList = new ArrayList<Pixel>();
-		for (int i = this.x - 4; i <= this.x + 4; i++) {
-			for (int j = this.y - 4; j <= this.y + 4; j++) {
-				Pixel p = new Pixel(i, j);
-				neighborsList.add(p);
-			}
-		}
-		neighborsList = removeUnrealPixels(neighborsList, w, h);
-		return neighborsList;
-	}
+    public List<Pixel> getEnthropyMembers(int w, int h) {
+        List<Pixel> neighborsList = new ArrayList<Pixel>();
+        for (int i = this.x - 4; i <= this.x + 4; i++) {
+            for (int j = this.y - 4; j <= this.y + 4; j++) {
+                Pixel p = new Pixel(i, j);
+                neighborsList.add(p);
+            }
+        }
+        neighborsList = removeUnrealPixels(neighborsList, w, h);
+        return neighborsList;
+    }
 }
