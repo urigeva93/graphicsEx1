@@ -27,9 +27,9 @@ public class SeamCarving {
                 numOfNeighbors = neighborsList.size();
 
                 selfColor = new Color(img.getRGB(j, i));
-                while (neighborsList.size() > 0) {
+                for (int k = 0; k < neighborsList.size(); k++) {
 
-                    Pixel neighbor = neighborsList.remove(0);
+                    Pixel neighbor = neighborsList.get(k);
                     Color colorNeighbor = new Color(img.getRGB(neighbor.getY(), neighbor.getX()));
                     sumNeighbors += (Math.abs(colorNeighbor.getRed() - selfColor.getRed())
                             + Math.abs(colorNeighbor.getBlue() - selfColor.getBlue())
@@ -50,7 +50,7 @@ public class SeamCarving {
         for (int i = 0; i < h; i++) {
             for (int j = 0; j < w; j++) {
                 Pixel p = new Pixel(i, j);
-                List<Pixel> pixelsList = p.getEnthropyMembers(w, h);
+                List<Pixel> pixelsList = p.getEntropyMembers(w, h);
                 int sumGrey = 0;
 
                 Iterator<Pixel> it = pixelsList.iterator();
@@ -96,7 +96,7 @@ public class SeamCarving {
     public static int straightSeam(double[][] energyMat) {
         int h = energyMat.length;
         int w = energyMat[1].length;
-        int indexSeam = -1; // index for the seam colum
+        int indexSeam = -1; // index for the seam col
         double minSum = Double.POSITIVE_INFINITY, tempSum = 0;
         for (int j = 0; j < w; j++) {
             for (int i = 0; i < h; i++)
@@ -126,9 +126,27 @@ public class SeamCarving {
         return energyMat;
     }
 
+    public static double[][] dynamicEnergyMatWithSeamMat(double[][] energyMat, double[][] seamMat) {
+        int h = energyMat.length;
+        int w = energyMat[0].length;
+        for (int i = 1; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+
+                double leftNeighbor = (j == 0) ? Double.POSITIVE_INFINITY : energyMat[i - 1][j - 1];
+                double rightNeighbor = (j == w - 1) ? Double.POSITIVE_INFINITY : energyMat[i - 1][j + 1];
+
+                energyMat[i][j] = energyMat[i][j]
+                        + Math.min(leftNeighbor, Math.min(energyMat[i - 1][j], rightNeighbor));
+
+                energyMat[i][j] += seamMat[i][j];
+            }
+        }
+        return energyMat;
+    }
+
     public static List<Pixel> pickNextSeam(double[][] dynamicMat) {
         int h = dynamicMat.length;
-        int w = dynamicMat[1].length;
+        int w = dynamicMat[0].length;
         int minIndex = -1;
         double minLastRow = Double.POSITIVE_INFINITY;
         List<Pixel> pixelSeamList = new ArrayList<>();
@@ -159,31 +177,28 @@ public class SeamCarving {
 
     }
 
-
-    //TODO kSeams not good
     public static List<List<Pixel>> pickNextKSeams(double[][] dynamicMat, int k) {
         List<List<Pixel>> kSeams = new ArrayList<>();
-        double[][] lastDynamicMat = new double[dynamicMat.length][dynamicMat[0].length];
+        double[][] seamMat = new double[dynamicMat.length][dynamicMat[0].length];
+        double[][] tempDynamicMat = new double[dynamicMat.length][dynamicMat[0].length];
+
         //copy dynamicMat
         for (int i = 0; i < dynamicMat.length; i++) {
             for (int j = 0; j < dynamicMat[0].length; j++) {
-                lastDynamicMat[i][j] = dynamicMat[i][j];
+                tempDynamicMat[i][j] = dynamicMat[i][j];
             }
         }
+
         for (int i = 0; i < k; i++) {
-            double[][] tempDynamicMat = new double[lastDynamicMat.length][lastDynamicMat[0].length - 1];
-            List<Pixel> seamList = pickNextSeam(lastDynamicMat);
-            kSeams.add(seamList);
-            for (int p = 0; p < lastDynamicMat.length; p++) {
-                Pixel pix = seamList.remove(seamList.size() - 1);
-                for (int j = 0; j < pix.getY(); j++) {
-                    tempDynamicMat[p][j] = lastDynamicMat[p][j];
-                }
-                for (int j = pix.getY(); j < tempDynamicMat[0].length; j++) {
-                    tempDynamicMat[p][j] = lastDynamicMat[p][j + 1];
-                }
+            List<Pixel> seamList = pickNextSeam(tempDynamicMat);
+
+            Iterator<Pixel> it = seamList.iterator();
+            while (it.hasNext()) {
+                Pixel p = it.next();
+                seamMat[p.getX()][p.getY()] = Double.POSITIVE_INFINITY;
             }
-            lastDynamicMat = tempDynamicMat;
+            kSeams.add(seamList);
+            tempDynamicMat = dynamicEnergyMatWithSeamMat(tempDynamicMat, seamMat);
         }
         return kSeams;
     }
@@ -220,6 +235,16 @@ public class SeamCarving {
         }
     }
 
+    public static BufferedImage readImage(String path) {
+        try {
+            BufferedImage inputImg = ImageIO.read(new File(path));
+            return inputImg;
+        } catch (IOException e) {
+            System.out.println("Error in reading file: " + e.getMessage());
+        }
+        return null;
+    }
+
     public static BufferedImage deepCopy(BufferedImage img) {
         ColorModel cm = img.getColorModel();
         boolean isAlpha = cm.isAlphaPremultiplied();
@@ -234,7 +259,7 @@ public class SeamCarving {
         Pixel pixel;
         BufferedImage newImg = new BufferedImage(w - 1, h, oldImg.getType());
         for (int i = 0; i < h; i++) {
-            pixel = seamList.remove(seamList.size() - 1);
+            pixel = seamList.get(seamList.size() - 1);
             for (int j = 0; j < pixel.getY(); j++) { // first half of row -
                 // until removed pixel
                 newImg.setRGB(j, i, oldImg.getRGB(j, i));
@@ -254,7 +279,7 @@ public class SeamCarving {
         Pixel pixel;
         BufferedImage newImg = new BufferedImage(w + 1, h, oldImg.getType());
         for (int i = 0; i < h; i++) {
-            pixel = seamList.remove(seamList.size() - 1);
+            pixel = seamList.get(seamList.size() - 1);
             for (int j = 0; j < pixel.getY(); j++) { // first half of row -
                 // until removed pixel
                 newImg.setRGB(j, i, oldImg.getRGB(j, i));
@@ -272,7 +297,7 @@ public class SeamCarving {
                     int blue = ((leftColor.getBlue() + rightColor.getBlue() + imgColor.getBlue()) / 3);
                     Color newImgColor = new Color(red, green, blue);
 
-                    newImg.setRGB(pixel.getY()+ t, i, newImgColor.getRGB());
+                    newImg.setRGB(pixel.getY() + t, i, newImgColor.getRGB());
                 } else
                     newImg.setRGB(pixel.getY() + t, i, oldImg.getRGB(pixel.getY(), i));
             }
@@ -287,10 +312,10 @@ public class SeamCarving {
     }
 
     public static void main(String[] args) throws IOException {
-        BufferedImage inputImg = ImageIO.read(new File(args[0]));
-        System.out.println("Height of img: "+inputImg.getHeight());
-        System.out.println("Width of img: "+inputImg.getWidth());
 
+        BufferedImage inputImg = readImage(args[0]);
+        System.out.println("Height of img: " + inputImg.getHeight());
+        System.out.println("Width of img: " + inputImg.getWidth());
         int desiredRows = Integer.parseInt(args[1]);
         int desiredCols = Integer.parseInt(args[2]);
         int energyTypeInt = Integer.parseInt(args[3]);
@@ -300,60 +325,84 @@ public class SeamCarving {
         int numOfIterCols = desiredCols - inputImg.getWidth();
         int numOfIterRows = desiredRows - inputImg.getHeight();
 
-        boolean enlargeCols = (numOfIterCols >= 0) ? true : false;
-        boolean enlargeRows = (numOfIterRows >= 0) ? true : false;
+        boolean enlargeCols = (numOfIterCols > 0) ? true : false;
+        boolean enlargeRows = (numOfIterRows > 0) ? true : false;
 
         BufferedImage outputImg = deepCopy(inputImg);
 
-        if (enlargeCols) {
-//			for(int i = 0; i < Math.abs(numOfIterCols); i++){
-//				double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
-//				double[][] dynamicMat = dynamicEnergyMat(energyMat);
-//				List<Pixel> seamList = pickNextSeam(dynamicMat);
-//				outputImg = addSeamToImg(outputImg, seamList, true);
-//			}
-            double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
-            double[][] dynamicMat = dynamicEnergyMat(energyMat);
-            List<List<Pixel>> kSeams = pickNextKSeams(dynamicMat, Math.abs(numOfIterCols));
-            while (kSeams.size() > 0) {
-                List<Pixel> seamList = kSeams.remove(0);
-                outputImg = addSeamToImg(outputImg, seamList, false);
-            }
-        } else {
-            for (int i = 0; i < Math.abs(numOfIterCols); i++) {
+        if (Math.abs(numOfIterCols) > 0) {
+            if (enlargeCols) {
+
                 double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
                 double[][] dynamicMat = dynamicEnergyMat(energyMat);
-                List<Pixel> seamList = pickNextSeam(dynamicMat);
-                outputImg = removeSeamFromImg(outputImg, seamList);
+                List<List<Pixel>> kSeams = pickNextKSeams(dynamicMat, Math.abs(numOfIterCols));
+
+
+                for (int i = 0; i < kSeams.size(); i++) {
+                    List<Pixel> seamList = kSeams.get(i);
+
+                    outputImg = addSeamToImg(outputImg, seamList, false);
+
+                    //adjust rest seams for the new sizes of image
+                    for (int j = i + 1; j < kSeams.size(); j++) {
+                        kSeams.set(j, adjustSeamForAdd(kSeams.get(j), seamList));
+                    }
+                }
+
+
+            } else {
+                for (int i = 0; i < Math.abs(numOfIterCols); i++) {
+                    double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
+                    double[][] dynamicMat = dynamicEnergyMat(energyMat);
+                    List<Pixel> seamList = pickNextSeam(dynamicMat);
+                    outputImg = removeSeamFromImg(outputImg, seamList);
+                }
             }
         }
 
-        outputImg = transposeImg(outputImg); //working on traspose img for rows
 
-        if (enlargeRows) {
-            double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
-            double[][] dynamicMat = dynamicEnergyMat(energyMat);
-            List<List<Pixel>> kSeams = pickNextKSeams(dynamicMat, Math.abs(numOfIterRows));
-            while (kSeams.size() > 0) {
-                List<Pixel> seamList = kSeams.remove(0);
-                outputImg = addSeamToImg(outputImg, seamList, false);
-            }
-        } else {
-            for (int i = 0; i < Math.abs(numOfIterRows); i++) {
+        if (Math.abs(numOfIterRows) > 0) {
+            outputImg = transposeImg(outputImg); //working on traspose img for rows
+
+            if (enlargeRows) {
                 double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
                 double[][] dynamicMat = dynamicEnergyMat(energyMat);
-                List<Pixel> seamList = pickNextSeam(dynamicMat);
-                outputImg = removeSeamFromImg(outputImg, seamList);
+                List<List<Pixel>> kSeams = pickNextKSeams(dynamicMat, Math.abs(numOfIterRows));
+
+                for (int i = 0; i < kSeams.size(); i++) {
+                    List<Pixel> seamList = kSeams.get(i);
+                    outputImg = addSeamToImg(outputImg, seamList, false);
+
+                    //adjust rest seams for the new sizes of image
+                    for (int j = i + 1; j < kSeams.size(); j++)
+                        kSeams.set(j, adjustSeamForAdd(kSeams.get(j), seamList));
+                }
+
+            } else {
+                for (int i = 0; i < Math.abs(numOfIterRows); i++) {
+                    double[][] energyMat = computeEnergyFromImage(outputImg, energyType);
+                    double[][] dynamicMat = dynamicEnergyMat(energyMat);
+                    List<Pixel> seamList = pickNextSeam(dynamicMat);
+                    outputImg = removeSeamFromImg(outputImg, seamList);
+                }
             }
+
+            outputImg = transposeImg(outputImg); //trasnposed again to get original
         }
 
-        outputImg = transposeImg(outputImg); //trasnposed again to get original
         saveImage(outputImagePath, outputImg);
+    }
+
+    public static List<Pixel> adjustSeamForAdd(List<Pixel> currPixelList, List<Pixel> seamList) {
+        for (int k = 0; k < currPixelList.size(); k++) {
+            Pixel p = currPixelList.get(k);
+            p.addToCol(seamList.get(k));
+        }
+        return currPixelList;
     }
 
     public enum EnergyTypes {
         REGULAR, ENTROPY, FORWARD
     }
-
 
 }

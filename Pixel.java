@@ -73,7 +73,7 @@ public class Pixel {
         return neighborsList;
     }
 
-    public List<Pixel> getEnthropyMembers(int w, int h) {
+    public List<Pixel> getEntropyMembers(int w, int h) {
         List<Pixel> neighborsList = new ArrayList<Pixel>();
         for (int i = this.x - 4; i <= this.x + 4; i++) {
             for (int j = this.y - 4; j <= this.y + 4; j++) {
@@ -83,5 +83,10 @@ public class Pixel {
         }
         neighborsList = removeUnrealPixels(neighborsList, w, h);
         return neighborsList;
+    }
+
+    public void addToCol(Pixel other) {
+        if (other.getY() <= this.y)
+            this.y++;
     }
 }
