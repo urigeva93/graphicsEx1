@@ -89,4 +89,13 @@ public class Pixel {
         if (other.getY() <= this.y)
             this.y++;
     }
+
+    public static void main(String[] args) {
+        Pixel p = new Pixel(4, 4);
+        List<Pixel> list = p.getNeighbors(10, 10);
+        for(int i = 0; i<list.size(); i++) {
+            System.out.println("<"+list.get(i).getX()+","+list.get(i).getY()+">");
+        }
+
+    }
 }
