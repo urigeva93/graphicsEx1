@@ -9,5 +9,15 @@ public class ForwardEnergyCost {
         this.cr = cr;
     }
 
+    public double getCu() {
+        return cu;
+    }
 
+    public double getCl() {
+        return cl;
+    }
+
+    public double getCr() {
+        return cr;
+    }
 }
